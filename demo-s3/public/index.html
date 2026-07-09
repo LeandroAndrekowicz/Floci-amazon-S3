@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Demo S3 - Floci</title>
+<style>
+  body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 0 16px; }
+  h1 { font-size: 1.4rem; }
+  section { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  input, select, button { padding: 6px 10px; margin: 4px 0; }
+  button { cursor: pointer; }
+  ul { padding-left: 18px; }
+  #log { background: #111; color: #0f0; padding: 10px; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+</style>
+</head>
+<body>
+<h1>Demo — Object Storage (estilo Amazon S3)</h1>
+
+<section>
+  <h2>Buckets</h2>
+  <input id="bucketName" placeholder="nome-do-bucket">
+  <button onclick="createBucket()">Criar bucket</button>
+  <button onclick="listBuckets()">Listar buckets</button>
+  <ul id="bucketList"></ul>
+</section>
+
+<section>
+  <h2>Objetos</h2>
+  <input id="objBucket" placeholder="bucket">
+  <input id="objKey" placeholder="nome-do-arquivo">
+  <input type="file" id="objFile">
+  <button onclick="uploadObject()">Upload</button>
+  <button onclick="listObjects()">Listar objetos</button>
+  <ul id="objectList"></ul>
+</section>
+
+<section>
+  <h2>Log</h2>
+  <div id="log"></div>
+</section>
+
+<script>
+function log(msg) {
+  const el = document.getElementById("log");
+  el.textContent += msg + "\n";
+  el.scrollTop = el.scrollHeight;
+}
+
+async function createBucket() {
+  const name = document.getElementById("bucketName").value.trim();
+  const res = await fetch(`/buckets/${encodeURIComponent(name)}`, { method: "PUT" });
+  log(`PUT /buckets/${name} -> ${res.status}: ${JSON.stringify(await res.json())}`);
+}
+
+async function listBuckets() {
+  const res = await fetch("/buckets");
+  const data = await res.json();
+  document.getElementById("bucketList").innerHTML =
+    data.buckets.map(b => `<li>${b}</li>`).join("");
+  log(`GET /buckets -> ${JSON.stringify(data)}`);
+}
+
+async function uploadObject() {
+  const bucket = document.getElementById("objBucket").value.trim();
+  const key = document.getElementById("objKey").value.trim();
+  const file = document.getElementById("objFile").files[0];
+  if (!file) { log("Selecione um arquivo"); return; }
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`/buckets/${encodeURIComponent(bucket)}/objects/${encodeURIComponent(key)}`, {
+    method: "PUT",
+    body: form,
+  });
+  log(`PUT /buckets/${bucket}/objects/${key} -> ${res.status}: ${JSON.stringify(await res.json())}`);
+}
+
+async function listObjects() {
+  const bucket = document.getElementById("objBucket").value.trim();
+  const res = await fetch(`/buckets/${encodeURIComponent(bucket)}/objects`);
+  const data = await res.json();
+  const list = document.getElementById("objectList");
+  if (!res.ok) { log(JSON.stringify(data)); return; }
+  list.innerHTML = data.objects.map(o =>
+    `<li>${o.key} (${o.size} bytes) — <a href="/buckets/${bucket}/objects/${o.key}">baixar</a></li>`
+  ).join("");
+  log(`GET /buckets/${bucket}/objects -> ${JSON.stringify(data)}`);
+}
+</script>
+</body>
+</html>

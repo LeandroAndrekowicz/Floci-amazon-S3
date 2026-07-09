@@ -1,0 +1,14 @@
+{
+  "name": "demo-s3",
+  "version": "1.0.0",
+  "description": "Demonstração de um serviço de object storage (estilo Amazon S3) para o simulador Floci",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^2.0.0"
+  }
+}
